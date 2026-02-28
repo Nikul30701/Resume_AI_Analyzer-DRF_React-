@@ -1,34 +1,44 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import { useAuth } from './store/hooks'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) return <div>Loading...</div>;
+  if (!isAuthenticated) return <Navigate to="/login" />;
+  
+  return children;
+};
 
+function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        
+        {/* Placeholder for protected routes */}
+        <Route 
+          path="/upload" 
+          element={
+            <ProtectedRoute>
+              <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
+                <h1 className="text-3xl font-bold">Resume Upload Page (Coming Soon)</h1>
+              </div>
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Redirect root to login or upload */}
+        <Route path="/" element={<Navigate to="/login" />} />
+        
+        {/* Registration */}
+        <Route path="/register" element={<Register />} />
+      </Routes>
+    </Router>
   )
 }
 

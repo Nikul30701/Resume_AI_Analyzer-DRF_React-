@@ -2,7 +2,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.utils import timezone
-from rest_framework_simplejwt.serializers import TokenObtainSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import User, Resume
 
@@ -67,7 +67,7 @@ class UserSerializer(serializers.ModelSerializer):
         
  
 # JWT – include user data in token response
-class CustomTokenObtainPairSerializer(TokenObtainSerializer):
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         data["user"] = UserSerializer(self.user).data
@@ -97,6 +97,7 @@ class ResumeAnalysisSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'file_name',
+            'pdf_file',
             'overall_score',
             'strengths',
             'weaknesses',

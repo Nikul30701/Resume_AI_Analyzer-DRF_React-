@@ -6,7 +6,7 @@ import resumeReducer from '../store/slices/resumeSlice';
 export const store = configureStore({
     reducer: {
         auth: authReducer,
-        resume: resumeReducer,
+        resumes: resumeReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

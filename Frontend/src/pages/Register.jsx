@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, useAppDispatch } from '../store/hooks';
 import { useNavigate, Link } from 'react-router-dom';
-import { clearError, register } from '../store/slices/authSlice';
+import { clearError, clearMessage, register } from '../store/slices/authSlice';
 import { Eye, EyeOff, Loader2, AlertCircle, Github } from 'lucide-react';
 
 const Register = () => {
@@ -16,17 +16,21 @@ const Register = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const navigate = useNavigate();
-    const { loading, error, isAuthenticated } = useAuth();
+    const { loading, error, isAuthenticated, message } = useAuth();
     const dispatch = useAppDispatch();
 
     useEffect(() => {
         if (isAuthenticated) {
             navigate('/upload');
         }
+        if (message === 'Registration successful') {
+            navigate('/login');
+        }
         return () => {
             dispatch(clearError());
+            dispatch(clearMessage());
         }
-    }, [isAuthenticated, navigate, dispatch]);
+    }, [isAuthenticated, message, navigate, dispatch]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;

@@ -8,6 +8,8 @@ from .serializers import *
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.parsers import MultiPartParser, FormParser
 from .tasks import analyze_resume_task
+from django.core.files.storage import default_storage
+
 
 
 class RegisterView(APIView):
@@ -82,7 +84,13 @@ class ResumeViewSet(viewsets.ModelViewSet):
         analyze_resume_task.delay(resume.id)
         
     def perform_destroy(self, instance):
-        # Clean up the file from storage before deleting the record
-        if instance.pdf_file:
-            instance.pdf_file.delete(save=False)
+        file_path = instance.pdf_file.path if instance.pdf_file else None
+
+        if file_path and default_storage.exists(file_path):
+            try:
+                instance.pdf_file.delete(save=False)
+            except PermissionError:
+                # On Windows the file can be locked; log and continue instead of 500
+                pass
+
         instance.delete()

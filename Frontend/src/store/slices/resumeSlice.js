@@ -1,68 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as api from '../../services/api';
 
-// Async thunks
-export const uploadResume = createAsyncThunk(
-  'resume/upload',
-  async (file, { rejectWithValue, dispatch }) => {
-    try {
-      const formData = new FormData();
-      formData.append('pdf_file', file);
-      formData.append('file_name', file.name);
-
-      const response = await api.default.post('/resume/upload/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (progressEvent) => {
-          const percent = progressEvent.total
-            ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
-            : 0;
-          dispatch(setUploadProgress(percent));
-        },
-      });
-
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.error ?? error.message ?? "Upload failed");
-    }
-  }
-);
-
-export const fetchResumeHistory = createAsyncThunk(
-  'resume/fetchHistory',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await api.getResumesHistory();
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.error ?? error.message ?? 'Failed to fetch history');
-    }
-  }
-);
-
-export const fetchResumeDetail = createAsyncThunk(
-  'resume/fetchDetail',
-  async (resumeId, { rejectWithValue }) => {
-    try {
-      const response = await api.getResumeDetail(resumeId);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.error ?? error.message ?? 'Failed to fetch resume');
-    }
-  }
-);
-
-export const deleteResume = createAsyncThunk(
-  'resume/delete',
-  async (resumeId, { rejectWithValue }) => {
-    try {
-      await api.deleteResume(resumeId);
-      return resumeId;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.error ?? error.message ?? 'Failed to delete resume');
-    }
-  }
-);
-
 // Initial state
 const initialState = {
   // Upload state
@@ -133,7 +71,8 @@ const resumeSlice = createSlice({
           progress: 100,
         };
         // Prepend to history so it appears at the top
-        state.history = [action.payload, ...state.history];
+        const existing = Array.isArray(state.history) ? state.history : [];
+        state.history = [action.payload, ...existing];
       })
       .addCase(uploadResume.rejected, (state, action) => {
         state.uploadLoading = false;
@@ -153,7 +92,10 @@ const resumeSlice = createSlice({
       })
       .addCase(fetchResumeHistory.fulfilled, (state, action) => {
         state.historyLoading = false;
-        state.history = action.payload;
+        // If your backend returns { results: [...] }
+        state.history = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload.results || [];
       })
       .addCase(fetchResumeHistory.rejected, (state, action) => {
         state.historyLoading = false;
@@ -206,5 +148,79 @@ export const {
   clearCurrentResume,
   setUploadProgress,
 } = resumeSlice.actions;
+
+// Move thunks below to avoid TEMPORAL DEAD ZONE with actions
+export const uploadResume = createAsyncThunk(
+  'resume/upload',
+  async (file, { rejectWithValue, dispatch }) => {
+    try {
+      const response = await api.uploadResume(file, {
+        onUploadProgress: (progressEvent) => {
+          const percent = progressEvent.total
+            ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+            : 0;
+          dispatch(setUploadProgress(percent));
+        },
+      });
+
+      let data = response.data;
+
+      // Poll until the analysis background task completes
+      while (data.status === 'pending' || data.status === 'processing') {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          const detailRes = await api.getResumeDetail(data.id);
+          data = detailRes.data;
+      }
+
+      if (data.status === 'failed') {
+          const serverMessage = data.weaknesses?.[0] || data.full_feedback?.message;
+          const message = serverMessage
+            ? (typeof serverMessage === 'string' ? serverMessage : "Analysis failed.")
+            : "Analysis failed. Please try a different PDF or check server logs.";
+          return rejectWithValue(message);
+      }
+
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error ?? error.message ?? "Upload failed");
+    }
+  }
+);
+
+export const fetchResumeHistory = createAsyncThunk(
+  'resume/fetchHistory',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.getResumesHistory();
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error ?? error.message ?? 'Failed to fetch history');
+    }
+  }
+);
+
+export const fetchResumeDetail = createAsyncThunk(
+  'resume/fetchDetail',
+  async (resumeId, { rejectWithValue }) => {
+    try {
+      const response = await api.getResumeDetail(resumeId);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error ?? error.message ?? 'Failed to fetch resume');
+    }
+  }
+);
+
+export const deleteResume = createAsyncThunk(
+  'resume/delete',
+  async (resumeId, { rejectWithValue }) => {
+    try {
+      await api.deleteResume(resumeId);
+      return resumeId;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error ?? error.message ?? 'Failed to delete resume');
+    }
+  }
+);
 
 export default resumeSlice.reducer;

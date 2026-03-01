@@ -28,7 +28,9 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        const isAuthRoute = originalRequest.url.includes('/auth/login') || originalRequest.url.includes('/auth/refresh') || originalRequest.url.includes('/auth/register');
+
+        if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
             originalRequest._retry = true;
             const refreshToken = localStorage.getItem('refresh_token');
 
@@ -91,7 +93,7 @@ export const register = (email, username, password, passwordConfirm) => {
  */
 export const login = (email, password) => {
     return api.post('/auth/login/', {
-        username: email,
+        email,
         password,
     });
 };
@@ -111,12 +113,14 @@ export const getProfile = () => {
 };
 
 // Resume Endpoints
-export const uploadResume = (file) => {
+export const uploadResume = (file, config = {}) => {
     const formData = new FormData();
     formData.append('pdf_file', file);
     formData.append('file_name', file.name);
-    return api.post('/resume/upload/', formData, {
+    return api.post('/resumes/', formData, {
+        ...config,
         headers: {
+            ...config.headers,
             'Content-Type': 'multipart/form-data',
         },
     });
@@ -124,16 +128,16 @@ export const uploadResume = (file) => {
 
 // Get all resumes for the logged-in user history
 export const getResumesHistory = () => {
-    return api.get('/resume/history/');
+    return api.get('/resumes/');
 };
 
 // Get a single resume Details by ID
 export const getResumeDetail = (resumeId) => {
-    return api.get(`/resume/${resumeId}/`);
+    return api.get(`/resumes/${resumeId}/`);
 };
 
 export const deleteResume = (resumeId) => {
-    return api.delete(`/resume/${resumeId}/`);
+    return api.delete(`/resumes/${resumeId}/`);
 };
 
 export default api;

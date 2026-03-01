@@ -14,6 +14,8 @@ def analyze_resume_task(self, resume_id):
         
         # Get the resume object
         resume = Resume.objects.get(id=resume_id)
+        resume.status = 'processing'
+        resume.save()
         
         # Step 1: Extract text from PDF
         logger.info(f"Extracting text from PDF for resume_id: {resume_id}")
@@ -23,6 +25,7 @@ def analyze_resume_task(self, resume_id):
             logger.error(f"Failed to extract text from resume_id: {resume_id}")
             resume.overall_score = 0
             resume.weaknesses = ["Could not extract text from PDF"]
+            resume.status = 'failed'
             resume.save()
             return {"status": "error", "message": "PDF extraction failed"}
         
@@ -44,6 +47,7 @@ def analyze_resume_task(self, resume_id):
         resume.ats_score = feedback.get('ats_score', 0)
         resume.full_feedback = feedback
         resume.analyzed_at = timezone.now()
+        resume.status = 'completed'
         resume.save()
         
         logger.info(f"Resume analysis completed successfully for resume_id: {resume_id}")
@@ -75,6 +79,7 @@ def analyze_resume_task(self, resume_id):
             resume.overall_score = 0
             resume.weaknesses = [f"Analysis failed: {str(exc)[:200]}"]
             resume.analyzed_at = timezone.now()
+            resume.status = 'failed'
             resume.save()
         except:
             pass

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, useAppDispatch } from '../store/hooks';
 import { useNavigate, Link } from 'react-router-dom';
-import { clearError, login } from '../store/slices/authSlice';
+import { clearError, clearMessage, login } from '../store/slices/authSlice';
 import { Eye, EyeOff, Loader2, AlertCircle, Github, Command } from 'lucide-react';
 
 const Login = () => {
@@ -24,6 +24,7 @@ const Login = () => {
         }
         return () => {
             dispatch(clearError());
+            dispatch(clearMessage());
         }
     }, [isAuthenticated, navigate, dispatch]);
 
@@ -99,6 +100,7 @@ const Login = () => {
                                 id="email"
                                 name="email"
                                 type="email"
+                                autoComplete='email'
                                 required
                                 className="block w-full px-3.5 py-2.5 text-gray-900 bg-white border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-colors sm:text-sm"
                                 placeholder="you@example.com"
@@ -115,6 +117,7 @@ const Login = () => {
                                 <input
                                     id="password"
                                     name="password"
+                                    autoComplete='current-password'
                                     type={showPassword ? "text" : "password"}
                                     required
                                     className="block w-full px-3.5 py-2.5 pr-11 text-gray-900 bg-white border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-colors sm:text-sm"

@@ -65,7 +65,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["id", "email", "username", "created_at"]
         read_only_fields = ["id", "created_at"]
         
- 
 # JWT – include user data in token response
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -91,7 +90,6 @@ class ResumeUploadSerializer(serializers.ModelSerializer):
     
     
 class ResumeAnalysisSerializer(serializers.ModelSerializer):
-    
     class Meta:
         model = Resume
         fields = [
@@ -104,7 +102,7 @@ class ResumeAnalysisSerializer(serializers.ModelSerializer):
             'missing_skills',
             'improvement_suggestions',
             'ats_score',
-            'analysis_result',
+            'full_feedback',   # ← was 'analysis_result'
             'created_at',
             'analyzed_at',
             'status',
@@ -116,8 +114,7 @@ class ResumeAnalysisSerializer(serializers.ModelSerializer):
             'missing_skills',
             'improvement_suggestions',
             'ats_score',
-            'analysis_result',
+            'full_feedback',   # ← was 'analysis_result'
             'analyzed_at',
             'status',
         ]
-    

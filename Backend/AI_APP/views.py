@@ -69,28 +69,25 @@ class UserProfileView(APIView):
 
 class ResumeViewSet(viewsets.ModelViewSet):
     queryset = Resume.objects.all()
-    serializer_class = ResumeAnalysisSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
-    
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return ResumeUploadSerializer
+        return ResumeAnalysisSerializer
+
     def get_queryset(self):
-        # User ko sirf uske apne resumes dikhen
         return self.queryset.filter(user=self.request.user).order_by('-created_at')
-    
+
     def perform_create(self, serializer):
         resume = serializer.save(user=self.request.user)
-        # Ab extraction aur Groq analysis yahan se nikal kar
-        # seedha Celery task ke andar chala jayega.
         analyze_resume_task.delay(resume.id)
-        
-    def perform_destroy(self, instance):
-        file_path = instance.pdf_file.path if instance.pdf_file else None
 
-        if file_path and default_storage.exists(file_path):
+    def perform_destroy(self, instance):
+        if instance.pdf_file:
             try:
                 instance.pdf_file.delete(save=False)
             except PermissionError:
-                # On Windows the file can be locked; log and continue instead of 500
                 pass
-
         instance.delete()

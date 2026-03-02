@@ -12,7 +12,7 @@ app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
     'cleanup-old-resumes': {
-        'task': 'apps.resumes.tasks.cleanup_old_resumes',
-        'schedule': crontab(hour=2, minute=0),  # Daily at 2 AM
+        'task': 'AI_APP.tasks.cleanup_old_resumes',  # ← fix path
+        'schedule': crontab(hour=2, minute=0),
     },
 }

@@ -117,6 +117,7 @@ const Register = () => {
                                 id="username"
                                 name="username"
                                 type="text"
+                                autoComplete='user-name'
                                 required
                                 className="block w-full px-3.5 py-2.5 text-gray-900 bg-white border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-colors sm:text-sm"
                                 placeholder="Enter your username"
@@ -133,6 +134,7 @@ const Register = () => {
                                 id="email"
                                 name="email"
                                 type="email"
+                                autoComplete='current-email'
                                 required
                                 className="block w-full px-3.5 py-2.5 text-gray-900 bg-white border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-colors sm:text-sm"
                                 placeholder="you@example.com"
@@ -149,6 +151,7 @@ const Register = () => {
                                 <input
                                     id="password"
                                     name="password"
+                                    autoComplete='user-password'
                                     type={showPassword ? "text" : "password"}
                                     required
                                     className="block w-full px-3.5 py-2.5 pr-11 text-gray-900 bg-white border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-colors sm:text-sm"
@@ -181,6 +184,7 @@ const Register = () => {
                                 <input
                                     id="passwordConfirm"
                                     name="passwordConfirm"
+                                    autoComplete='user-password-confirm'
                                     type={showConfirmPassword ? "text" : "password"}
                                     required
                                     className="block w-full px-3.5 py-2.5 pr-11 text-gray-900 bg-white border border-gray-200 rounded-lg placeholder-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-colors sm:text-sm"

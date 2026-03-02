@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react'
-import { useAppDispatch, useCurrentUpload, useUploadLoading } from '../store/hooks'
+import { useAppDispatch, useCurrentUpload, useUploadLoading, useCurrentResume } from '../store/hooks'
 import { useNavigate } from 'react-router-dom';
 import { uploadResume, clearCurrentUpload, fetchResumeDetail } from '../store/slices/resumeSlice';
 import { 
@@ -27,6 +27,7 @@ const Upload = () => {
 
     const dispatch = useAppDispatch();
     const currentUpload = useCurrentUpload();
+    const currentResume = useCurrentResume();
     const uploadLoading = useUploadLoading();
     const navigate = useNavigate();
     
@@ -37,12 +38,16 @@ const Upload = () => {
         if (resumeId && !analysisComplete && pollCount < 30) {
             const timer = setTimeout(() => {
                 dispatch(fetchResumeDetail(resumeId)).then((result) => {
-                    if (result.payload && result.payload.analyzed_at) {
-                        setAnalysisComplete(true);
-                        setAnalysisProgress(100);
-                    } else {
-                        setPollCount(prev => prev + 1);
-                        setAnalysisProgress(Math.min((pollCount / 30) * 100, 95));
+                    const payload = result.payload;
+                    if (payload) {
+                        // Treat both completed and failed analyses as "done"
+                        if (payload.analyzed_at || payload.status === 'failed') {
+                            setAnalysisComplete(true);
+                            setAnalysisProgress(100);
+                        } else {
+                            setPollCount(prev => prev + 1);
+                            setAnalysisProgress(Math.min((pollCount / 30) * 100, 95));
+                        }
                     }
                 });
             }, 1000);
@@ -111,6 +116,10 @@ const Upload = () => {
         setPollCount(0);
         setAnalysisProgress(0);
     }
+
+    // Prefer the freshest analysis data from detail endpoint,
+    // but fall back to upload response if needed.
+    const displayData = currentResume || (currentUpload && currentUpload.data);
 
     return (
         <div className="min-h-screen bg-[#FBFBFB] px-4 py-16 font-sans selection:bg-gray-900 selection:text-white">
@@ -229,7 +238,7 @@ const Upload = () => {
                                 </div>
                             )}
                         </div>
-                    ) : currentUpload && currentUpload.data ? (
+                    ) : analysisComplete && displayData ? (
                         /* SUCCESS RESULTS STATE */
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                             {/* Visual Score Display */}
@@ -241,8 +250,8 @@ const Upload = () => {
                                             <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Insights Ready</span>
                                         </div>
                                         <h2 className="text-6xl font-light tracking-tighter italic">
-                                            {currentUpload.data.overall_score || currentUpload.data.overall_score === 0 
-                                                ? currentUpload.data.overall_score 
+                                            {displayData.overall_score || displayData.overall_score === 0 
+                                                ? displayData.overall_score 
                                                 : 'N/A'}
                                             <span className="text-2xl text-gray-600 font-normal">/100</span>
                                         </h2>
@@ -251,8 +260,8 @@ const Upload = () => {
                                     <div className="mt-12 flex gap-8">
                                         <div>
                                             <p className="text-4xl font-light">
-                                                {currentUpload.data.ats_score || currentUpload.data.ats_score === 0 
-                                                    ? currentUpload.data.ats_score 
+                                                {displayData.ats_score || displayData.ats_score === 0 
+                                                    ? displayData.ats_score 
                                                     : 'N/A'}%
                                             </p>
                                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">ATS Match</p>
@@ -262,14 +271,14 @@ const Upload = () => {
 
                                 <div className="p-10 sm:p-14 space-y-12">
                                     {/* Missing Skills */}
-                                    {currentUpload.data.missing_skills && currentUpload.data.missing_skills.length > 0 && (
+                                    {displayData.missing_skills && displayData.missing_skills.length > 0 && (
                                         <section>
                                             <div className="flex items-center gap-2 mb-6">
                                                 <Target className="h-4 w-4 text-black" />
                                                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Target Skills</h3>
                                             </div>
                                             <div className="flex flex-wrap gap-2">
-                                                {currentUpload.data.missing_skills.map((skill, i) => (
+                                                {displayData.missing_skills.map((skill, i) => (
                                                     <span key={i} className="px-3 py-1 bg-gray-100 text-gray-900 text-[11px] font-bold rounded-full transition-colors hover:bg-black hover:text-white cursor-default">
                                                         {skill}
                                                     </span>
@@ -279,14 +288,14 @@ const Upload = () => {
                                     )}
 
                                     {/* Critical Feedback */}
-                                    {currentUpload.data.weaknesses && currentUpload.data.weaknesses.length > 0 && (
+                                    {displayData.weaknesses && displayData.weaknesses.length > 0 && (
                                         <section className="space-y-6">
                                             <div className="flex items-center gap-2">
                                                 <div className="h-1 w-1 bg-black rounded-full" />
                                                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Critical Feedback</h3>
                                             </div>
                                             <ul className="space-y-4">
-                                                {currentUpload.data.weaknesses.slice(0, 5).map((w, i) => (
+                                                {displayData.weaknesses.slice(0, 5).map((w, i) => (
                                                     <li key={i} className="text-sm text-gray-600 font-medium leading-relaxed pl-4 border-l-2 border-orange-100">
                                                         {w}
                                                     </li>

@@ -25,7 +25,10 @@ def analyze_resume_task(self, resume_id):
             logger.error(f"Failed to extract text from resume_id: {resume_id}")
             resume.overall_score = 0
             resume.weaknesses = ["Could not extract text from PDF"]
+            # Mark as failed and completed so the frontend polling
+            # (which checks analyzed_at) can stop gracefully.
             resume.status = 'failed'
+            resume.analyzed_at = timezone.now()
             resume.save()
             return {"status": "error", "message": "PDF extraction failed"}
         

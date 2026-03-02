@@ -167,6 +167,8 @@ REST_FRAMEWORK = {
 # CORS — allow React/Vite dev server to talk to Django
 CORS_ALLOWED_ORIGINS = [
     "https://resume-ai-analyzer-drf-react.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 CORS_ALLOW_CREDENTIALS = False
 
@@ -193,7 +195,7 @@ GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY is not set in environment variables")
-GROQ_MODEL = os.getenv('GROQ_MODEL', 'mixtral-8x7b-32768')
+GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile') 
 
 USE_LOCAL_TRANSFORMERS = os.getenv('USE_LOCAL_TRANSFORMERS', 'False') == 'True'
 

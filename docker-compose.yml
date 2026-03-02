@@ -1,9 +1,9 @@
 services:
-  web:
+  backend:
     build:
       context: .
       dockerfile: backend_Dockerfile
-    command: sh -c "python manage.py migrate && gunicorn Resume_AI.wsgi:application --bind 0.0.0.0:8000"
+    command: sh -c "until pg_isready -h db -p 5432; do echo waiting for database; sleep 2; done && python manage.py migrate && gunicorn Resume_AI.wsgi:application --bind 0.0.0.0:8000"
     volumes:
       - ./Backend:/app
     ports:
@@ -14,26 +14,35 @@ services:
       - db
 
   db:
-    image: postgres:15
+    image: postgres:15-alpine
     environment:
       POSTGRES_DB: resume_db
       POSTGRES_USER: resume_user
       POSTGRES_PASSWORD: resume_pass
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
-
+      - postgres_data:/var/lib/postgresql/data
 
   celery:
     build:
       context: .
       dockerfile: backend_Dockerfile
-    command: celery -A Resume_AI worker --loglevel=info
+    command: sh -c "until pg_isready -h db -p 5432; do echo waiting for database; sleep 2; done && celery -A Resume_AI worker --loglevel=info"
     volumes:
       - ./Backend:/app
     env_file:
       - ./Backend/.env
     depends_on:
       - db
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend_Dockerfile
+    container_name: resume_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:

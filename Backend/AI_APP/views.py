@@ -7,7 +7,6 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import *
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.parsers import MultiPartParser, FormParser
-from .tasks import analyze_resume_task
 from django.core.files.storage import default_storage
 
 
@@ -81,8 +80,45 @@ class ResumeViewSet(viewsets.ModelViewSet):
         return self.queryset.filter(user=self.request.user).order_by('-created_at')
 
     def perform_create(self, serializer):
-        resume = serializer.save(user=self.request.user)
-        analyze_resume_task.delay(resume.id)
+        from django.utils import timezone
+        from .utils import extract_text_from_pdf, analyze_resume_with_groq
+
+        resume = serializer.save(user=self.request.user, status='processing')
+
+        try:
+            # Step 1: Extract text
+            extracted_text = extract_text_from_pdf(resume.pdf_file)
+
+            if not extracted_text:
+                resume.status = 'failed'
+                resume.weaknesses = ["Could not extract text from PDF"]
+                resume.analyzed_at = timezone.now()
+                resume.save()
+                return
+
+            resume.extracted_text = extracted_text
+            resume.save()
+
+            # Step 2: Analyze with Groq
+            feedback = analyze_resume_with_groq(extracted_text)
+
+            # Step 3: Save results
+            resume.overall_score = feedback.get('overall_score', 0)
+            resume.strengths = feedback.get('strengths', [])
+            resume.weaknesses = feedback.get('weaknesses', [])
+            resume.missing_skills = feedback.get('missing_skills', [])
+            resume.improvement_suggestions = feedback.get('improvement_suggestions', [])
+            resume.ats_score = feedback.get('ats_score', 0)
+            resume.full_feedback = feedback
+            resume.analyzed_at = timezone.now()
+            resume.status = 'completed'
+            resume.save()
+
+        except Exception as e:
+            resume.status = 'failed'
+            resume.weaknesses = [f"Analysis failed: {str(e)[:200]}"]
+            resume.analyzed_at = timezone.now()
+            resume.save()
 
     def perform_destroy(self, instance):
         if instance.pdf_file:

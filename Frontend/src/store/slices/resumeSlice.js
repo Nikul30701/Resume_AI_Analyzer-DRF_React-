@@ -163,24 +163,10 @@ export const uploadResume = createAsyncThunk(
         },
       });
 
-      let data = response.data;
-
-      // Poll until the analysis background task completes
-      while (data.status === 'pending' || data.status === 'processing') {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          const detailRes = await api.getResumeDetail(data.id);
-          data = detailRes.data;
-      }
-
-      if (data.status === 'failed') {
-          const serverMessage = data.weaknesses?.[0] || data.full_feedback?.message;
-          const message = serverMessage
-            ? (typeof serverMessage === 'string' ? serverMessage : "Analysis failed.")
-            : "Analysis failed. Please try a different PDF or check server logs.";
-          return rejectWithValue(message);
-      }
-
-      return data;
+      // Just return the created resume record.
+      // The UI (Upload page) already has its own polling logic that
+      // checks the resume status and shows progress / results.
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.error ?? error.message ?? "Upload failed");
     }

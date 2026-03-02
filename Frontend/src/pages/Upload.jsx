@@ -3,18 +3,18 @@ import { useAppDispatch, useCurrentUpload, useUploadLoading } from '../store/hoo
 import { useNavigate } from 'react-router-dom';
 import { uploadResume, clearCurrentUpload, fetchResumeDetail } from '../store/slices/resumeSlice';
 import { 
-  FileText, 
-  Upload as UploadIcon, 
-  Loader2, 
-  CheckCircle2, 
-  AlertCircle, 
-  Plus,
-  History,
-  Command,
-  Sparkles,
-  Target,
-  Zap,
-  ArrowRight
+    FileText, 
+    Upload as UploadIcon, 
+    Loader2, 
+    CheckCircle2, 
+    AlertCircle, 
+    Plus,
+    History,
+    Command,
+    Sparkles,
+    Target,
+    Zap,
+    ArrowRight
 } from 'lucide-react';
 
 const Upload = () => {
